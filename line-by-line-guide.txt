@@ -1,0 +1,66 @@
+# Google Cloud / Vertex AI runbook for user_labeling
+# Run these commands in PowerShell from the repository root.
+# Assumptions:
+# - Authentication is already completed.
+# - The GCS bucket already exists.
+# - Do not use environment variables; all values are written explicitly below.
+
+# 1) Set the active project once if needed
+gcloud config set project slcc-buzz-ai
+
+# 2) Enable APIs once if they are not already enabled
+gcloud services enable aiplatform.googleapis.com
+gcloud services enable storage.googleapis.com
+
+# 3) Install Python packages if needed
+python -m pip install pandas pyyaml jinja2 openpyxl xlsxwriter google-cloud-aiplatform
+
+# 4) Place raw input files in:
+# .\user_labeling\data\raw\
+# Supported formats: .csv, .xls, .xlsx
+
+# 5) Create request JSONL files with the Python code
+python .\user_labeling\create_jsonl.py
+
+# 6) Upload the generated JSONL request files to GCS
+gcloud storage cp --recursive `
+  ".\data\jsonl_inputs\*" `
+  "gs://slcc-buzz-ai/user_labeling_input/"
+
+# 7) Submit Vertex AI batch prediction jobs with the Python code
+# batch_pred.py uses:
+# - project: slcc-buzz-ai
+# - region: us-central1
+# - bucket: gs://slcc-buzz-ai
+# - model: publishers/google/models/gemini-3.1-flash-lite
+python .\user_labeling\batch_pred.py
+
+# 8) After the batch jobs finish, download the prediction JSONL files
+gcloud storage cp --recursive `
+  "gs://slcc-buzz-ai/user_labeling_output/" `
+  ".\user_labeling\data\jsonl_outputs\"
+
+# 9) Convert prediction JSONL files into Excel outputs with the Python code
+python .\user_labeling\convert_jsonl.py
+
+# Python files used in this workflow
+# - .\user_labeling\create_jsonl.py
+#   Reads raw files from .\user_labeling\data\raw\
+#   Writes request files to .\user_labeling\data\jsonl_inputs\
+#
+# - .\user_labeling\batch_pred.py
+#   Submits one Vertex AI batch prediction job per JSONL input file
+#   Reads local JSONL names from .\user_labeling\data\jsonl_inputs\
+#   Expects uploaded inputs under gs://slcc-buzz-ai/user_labeling_input/
+#   Writes results under gs://slcc-buzz-ai/user_labeling_output/
+#
+# - .\user_labeling\convert_jsonl.py
+#   Reads downloaded predictions from .\user_labeling\data\jsonl_outputs\
+#   Writes Excel outputs to .\user_labeling\data\excel_outputs\
+
+# End-to-end command sequence
+# python .\user_labeling\create_jsonl.py
+# gcloud storage cp --recursive ".\user_labeling\data\jsonl_inputs\*" "gs://slcc-buzz-ai/user_labeling_input/"
+# python .\user_labeling\batch_pred.py
+# gcloud storage cp --recursive "gs://slcc-buzz-ai/user_labeling_output/" ".\user_labeling\data\jsonl_outputs\"
+# python .\user_labeling\convert_jsonl.py

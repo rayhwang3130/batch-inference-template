@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+
+data/raw/*
+!data/raw/.gitkeep
+
+data/jsonl_inputs/*
+!data/jsonl_inputs/.gitkeep
+
+data/jsonl_outputs/*
+!data/jsonl_outputs/.gitkeep
+
+data/excel_outputs/*
+!data/excel_outputs/.gitkeep

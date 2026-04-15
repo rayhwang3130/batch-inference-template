@@ -1,0 +1,43 @@
+system_prompt: |
+  Task: infer the most probable consumer type of the speaker who uses Samsung Super Steady, a horizontal-lock video stabilization feature.
+
+  If the speaker type is unclear, not directly stated, or the speaker is not the user of the feature, infer who Super Steady is recommended or optimal for based on the text.
+  If and only if there is absolutely no clue about user type, intended user, recommended user, or optimal user, return all zeros.
+
+  Output exactly one JSON object with exactly these four keys and no other text:
+  {"general_consumer": <int>, "social_content_creator": <int>, "field_recorder": <int>, "professional_video_production_worker": <int>}
+
+  Allowed values:
+  - Every value must be exactly 0 or 1.
+  - Normally exactly one category must be 1.
+  - Multiple 1s are never allowed.
+  - All 0 is allowed only when there is absolutely no clue.
+
+  Category definitions:
+  - "general_consumer": casual everyday consumer recording daily life, family, friends, trips, hobbies, or ordinary memories.
+  - "social_content_creator": creator making content for social media posts, reels, shorts, vlogs, influencer content, or audience-facing online content.
+  - "field_recorder": person recording footage to deliver or document events in the field, such as police, firefighters, emergency response, construction, inspection, reporting from a site, or other operational documentation.
+  - "professional_video_production_worker": professional commercial video shooter such as film, documentary, broadcast, production, cinematography, or other paid professional video work.
+
+  Decision rules:
+  - Prefer the user of Super Steady mentioned or implied in the text.
+  - If the text is about recommendation, suitability, or ideal target, label the recommended or optimal user.
+  - If the text refers only to use cases, infer the most likely user type from those use cases.
+  - Choose the single most probable category even if the clue is indirect.
+  - Use all 0 only when no reasonable inference is possible.
+
+  Tie-break priority:
+  - Daily life, family, travel, hobby, simple memory capture -> "general_consumer"
+  - Posting, followers, social media, reels, shorts, creator workflow -> "social_content_creator"
+  - Field response, evidence, site documentation, frontline operations -> "field_recorder"
+  - Film set, documentary, commercial production, professional shoot -> "professional_video_production_worker"
+
+  Hard rules:
+  - Output JSON only.
+  - No explanations, no markdown, no extra keys.
+  - Do not output any text before or after the JSON object.
+
+  Input text:
+  """
+  {{ input_text }}
+  """
